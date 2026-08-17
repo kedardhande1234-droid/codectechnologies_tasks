@@ -1,0 +1,288 @@
+import nltk
+import random
+import string
+
+from nltk.stem import PorterStemmer
+from nltk.tokenize import word_tokenize
+
+# Download required NLTK data
+nltk.download("punkt")
+nltk.download("punkt_tab")
+
+# Create stemmer
+stemmer = PorterStemmer()
+
+
+# --------------------------------------------------
+# Customer Service Intents
+# --------------------------------------------------
+
+intents = {
+    "greeting": {
+        "patterns": [
+            "hello",
+            "hi",
+            "hey",
+            "good morning",
+            "good afternoon",
+            "good evening",
+            "how are you"
+        ],
+        "responses": [
+            "Hello! How can I help you today?",
+            "Hi! Welcome to ABC Store. How may I assist you?",
+            "Hello! What can I do for you?"
+        ]
+    },
+
+    "product": {
+        "patterns": [
+            "what products do you sell",
+            "what items are available",
+            "show me your products",
+            "tell me about your products",
+            "what do you sell"
+        ],
+        "responses": [
+            "We sell electronics, clothing, accessories, and home products.",
+            "Our store offers electronics, fashion, accessories, and home products."
+        ]
+    },
+
+    "order": {
+        "patterns": [
+            "where is my order",
+            "track my order",
+            "order status",
+            "where is my package",
+            "when will my order arrive",
+            "track order"
+        ],
+        "responses": [
+            "Please provide your order ID to check the status.",
+            "You can track your order using the order ID provided during purchase."
+        ]
+    },
+
+    "return": {
+        "patterns": [
+            "how can i return a product",
+            "i want to return my product",
+            "return policy",
+            "can i return my order",
+            "how long do i have to return",
+            "refund policy"
+        ],
+        "responses": [
+            "Our return period is 7 days from the date of delivery.",
+            "You can return an eligible product within 7 days of delivery."
+        ]
+    },
+
+    "payment": {
+        "patterns": [
+            "what payment methods do you accept",
+            "how can i pay",
+            "payment methods",
+            "do you accept upi",
+            "can i pay by card",
+            "cash on delivery"
+        ],
+        "responses": [
+            "We accept UPI, Credit Cards, Debit Cards, and Cash on Delivery.",
+            "You can pay using UPI, cards, or Cash on Delivery."
+        ]
+    },
+
+    "working_hours": {
+        "patterns": [
+            "what are your working hours",
+            "when are you open",
+            "business hours",
+            "customer service hours",
+            "when can i contact you"
+        ],
+        "responses": [
+            "Our customer service is available Monday to Saturday, 9 AM to 6 PM.",
+            "We are available from 9 AM to 6 PM, Monday to Saturday."
+        ]
+    },
+
+    "contact": {
+        "patterns": [
+            "how can i contact you",
+            "customer care number",
+            "contact number",
+            "email address",
+            "how do i contact customer service"
+        ],
+        "responses": [
+            "You can contact us at support@abcstore.com.",
+            "Our customer care number is +91-9876543210."
+        ]
+    },
+
+    "thanks": {
+        "patterns": [
+            "thank you",
+            "thanks",
+            "thank you so much",
+            "thanks for helping"
+        ],
+        "responses": [
+            "You're welcome!",
+            "Happy to help!",
+            "You're welcome. Is there anything else I can help you with?"
+        ]
+    },
+
+    "goodbye": {
+        "patterns": [
+            "bye",
+            "goodbye",
+            "see you",
+            "exit",
+            "quit"
+        ],
+        "responses": [
+            "Thank you for contacting ABC Store. Have a great day!",
+            "Goodbye! Have a wonderful day!"
+        ]
+    }
+}
+
+
+# --------------------------------------------------
+# NLP Functions
+# --------------------------------------------------
+
+def preprocess(sentence):
+    """
+    Converts the sentence into normalized stemmed words.
+    """
+
+    # Convert to lowercase
+    sentence = sentence.lower()
+
+    # Tokenize sentence
+    words = word_tokenize(sentence)
+
+    # Remove punctuation
+    words = [
+        word for word in words
+        if word not in string.punctuation
+    ]
+
+    # Apply stemming
+    words = [
+        stemmer.stem(word)
+        for word in words
+    ]
+
+    return words
+
+
+def calculate_similarity(user_words, pattern_words):
+    """
+    Calculates simple similarity between
+    user's words and pattern words.
+    """
+
+    if len(user_words) == 0:
+        return 0
+
+    common_words = 0
+
+    for word in user_words:
+        if word in pattern_words:
+            common_words += 1
+
+    return common_words / len(user_words)
+
+
+def find_intent(user_input):
+    """
+    Finds the most suitable customer-service intent.
+    """
+
+    user_words = preprocess(user_input)
+
+    best_intent = None
+    best_score = 0
+
+    for intent, data in intents.items():
+
+        for pattern in data["patterns"]:
+
+            pattern_words = preprocess(pattern)
+
+            score = calculate_similarity(
+                user_words,
+                pattern_words
+            )
+
+            if score > best_score:
+                best_score = score
+                best_intent = intent
+
+    # Minimum confidence threshold
+    if best_score >= 0.30:
+        return best_intent
+
+    return None
+
+
+# --------------------------------------------------
+# Chatbot
+# --------------------------------------------------
+
+def chatbot():
+
+    print("=" * 55)
+    print("        ABC STORE - NLP CUSTOMER CHATBOT")
+    print("=" * 55)
+
+    print("Bot: Hello! Welcome to ABC Store.")
+    print("Bot: I am an NLP-based customer service chatbot.")
+    print("Bot: Type 'bye' anytime to end the conversation.")
+    print()
+
+    while True:
+
+        user_input = input("You: ").strip()
+
+        if user_input == "":
+            print("Bot: Please enter a question.")
+            continue
+
+        intent = find_intent(user_input)
+
+        if intent is not None:
+
+            response = random.choice(
+                intents[intent]["responses"]
+            )
+
+            print("Bot:", response)
+
+            if intent == "goodbye":
+                break
+
+        else:
+
+            print(
+                "Bot: Sorry, I couldn't understand your question."
+            )
+
+            print(
+                "Bot: You can ask me about orders, products, "
+                "returns, payments, working hours, or contact information."
+            )
+
+
+# --------------------------------------------------
+# Run Program
+# --------------------------------------------------
+
+if __name__ == "__main__":
+    chatbot()
